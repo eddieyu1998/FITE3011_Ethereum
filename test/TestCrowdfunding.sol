@@ -41,21 +41,5 @@ contract TestCrowdfunding {
         Assert.equal(r, 0, "Expected deposit not equal");
     }
 
-    // donate setup
-    function testDonate() public
-    {
-        crowdfunding.donate.value(100)(campaignId);
-    }
-
-    // check the contract after a donation
-    function testGetDeposit2() public
-    {
-        uint r = crowdfunding.getDeposit(campaignId);
-        Assert.equal(r, 100, "Expected deposit not equal");
-    }
-
-    function testDonate2() public
-    {
-        crowdfunding.donate.value(1)(campaignid);
-    }
+    // test donate and withdraw with js
 }
