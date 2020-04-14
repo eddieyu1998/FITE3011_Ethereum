@@ -54,6 +54,9 @@ contract Crowdfunding
     Campaign[] campaigns;
 
     event CampaignCreated (uint campaignId, address owner);
+    event DonationReceived (uint campaignId, address donor, uint amount, uint deposit);
+    event OwnerWithdrawn (uint campaignId, address owner, uint amount);
+    event DonorWithdrawn (uint campaignId, address donor, uint amount);
 
     // Getter for goal of a campaign
     function getGoal (uint campaignId) public view returns (uint)
@@ -87,6 +90,7 @@ contract Crowdfunding
 
         uint campaignId = numCampaigns++;
         numCampaigns = campaigns.push(Campaign(msg.sender, endTime, goal, 0, 0, State.Active));
+
         emit CampaignCreated(campaignId, msg.sender);
     }
 
@@ -126,12 +130,6 @@ contract Crowdfunding
         // donor can only donate one time
         require (c.donors[msg.sender] == 0, "You can only donate once");
 
-        // require endTime not reached
-        require (c.endTime > block.timestamp, "EndTime reached");
-
-        // require goal not reached, (allow the last donate to exceed goal)
-        require (c.deposit < c.goal, "Goal has already been reached");
-
         // require transferring amount > 0
         require (msg.value > 0, "Invalid donation amount");
 
@@ -145,6 +143,8 @@ contract Crowdfunding
 
         // check whether the goal is reached
         checkCampaignState(campaignId);
+
+        emit DonationReceived(campaignId, msg.sender, msg.value, c.deposit);
     }
 
     // Function to withdraw from a campaign
@@ -154,30 +154,40 @@ contract Crowdfunding
         require (campaignId < numCampaigns, "Invalid campaignId");
 
         Campaign storage c = campaigns[campaignId];
+        State state = checkCampaignState(campaignId);
+
         if (msg.sender == c.owner)
         {
             // check campaign state
-            require (c.state == State.Achieved, "You are not allowed to withdraw at this point");
+            require (state == State.Achieved, "You are not allowed to withdraw at this point");
 
-            msg.sender.transfer(c.deposit);
+            // allow owner to withdrawn all deposit
+            uint withdrawnAmount = c.deposit;
+            msg.sender.transfer(withdrawnAmount);
 
-            // set deposit to 0
+            // set deposit to 0, then update state
             c.deposit = 0;
-
-            // update state
             c.state = State.Completed;
+
+            emit OwnerWithdrawn(campaignId, msg.sender, withdrawnAmount);
         }
         else
         {
             // check campaign state
-            require (c.state == State.Expired, "You are not allowed to withdraw at this point");
+            require (state == State.Expired, "You are not allowed to withdraw at this point");
 
             // check if sender took part in it
             require (c.donors[msg.sender] > 0, "You have no donation that can be withdrawn");
 
             // allow refund, then remove from mapping
-            msg.sender.transfer(c.donors[msg.sender]);
+            uint refundAmount = c.donors[msg.sender];
+            msg.sender.transfer(refundAmount);
+
+            // update deposit, then delete sender from the donor list
+            c.deposit -= refundAmount;
             delete c.donors[msg.sender];
+
+            emit DonorWithdrawn(campaignId, msg.sender, refundAmount);
         }
     }
 }
