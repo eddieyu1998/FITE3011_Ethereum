@@ -87,6 +87,28 @@ contract Crowdfunding
         campaigns[campaignId] = Campaign(msg.sender, endTime, goal, 0, 0, State.Active);
     }
 
+    // Function to check (and update) campaign state (from Active)
+    function checkCampaignState (uint campaignId) public returns (State)
+    {
+        // validate campaignId
+        require (campaignId < numCampaigns, "Invalid camapignId");
+
+        Campaign storage c = campaigns[campaingId];
+
+        if (c.state == State.Active)
+        {
+            if (c.deposit >= c.goal)
+            {
+                c.state = State.Achieved;
+            }
+            else if (block.timestamp > c.endTime)
+            {
+                c.state = State.Expired;
+            }
+        }
+        return c.state;
+    }
+
     // Function to donate to a campaign
     function donate (uint campaignId) public payable
     {
@@ -111,12 +133,15 @@ contract Crowdfunding
         require (msg.value > 0, "Invalid donation amount");
 
         // possibly redundant? endTime not reached + goal not reached => Active
-        require (c.state = State.Active, "The campaign is currently not accepting donation");
+        require (c.state == State.Active, "The campaign is currently not accepting donation");
 
+        // allow donation
         c.donors[msg.sender] = msg.value;
+        c.numDonors++;
         c.deposit += msg.value;
 
         // check whether the goal is reached
+        checkCampaignState(campaignId);
     }
 
     // Function to withdraw from a campaign
@@ -128,22 +153,28 @@ contract Crowdfunding
         Campaign storage c = campaigns[campaignId];
         if (msg.sender == c.owner)
         {
-            // check if goal is reached
-            require (c.deposit >= c.goal, "Goal not reached");
+            // check campaign state
+            require (c.state == State.Achieved, "You are not allowed to withdraw at this point");
 
-            // check if fund has already been drawn (campaign state)
-
-            //
             msg.sender.transfer(c.deposit);
 
-            // prevent owner double draw
-            // change state
+            // set deposit to 0
+            c.deposit = 0;
+
+            // update state
+            c.state = State.Completed;
         }
         else
         {
+            // check campaign state
+            require (c.state == State.Expired, "You are not allowed to withdraw at this point");
+
             // check if sender took part in it
+            require (c.donors[msg.sender] > 0, "You have no donation that can be withdrawn");
 
             // allow refund, then remove from mapping
+            msg.sender.transfer(c.donors[msg.sender]);
+            delete c.donors[msg.sender];
         }
     }
 }

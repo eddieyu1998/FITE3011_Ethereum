@@ -11,7 +11,7 @@ contract TestCrowdfunding {
     uint endTime = block.timestamp + 180;
     uint goal = 10000;
 
-    uint public initialBalance = 100 wei;
+    uint public initialBalance = 101 wei;
 
     //testing the createCampaign() function
     function testCreateCampaign() public
@@ -52,5 +52,10 @@ contract TestCrowdfunding {
     {
         uint r = crowdfunding.getDeposit(campaignId);
         Assert.equal(r, 100, "Expected deposit not equal");
+    }
+
+    function testDonate2() public
+    {
+        crowdfunding.donate.value(1)(campaignid);
     }
 }
