@@ -93,7 +93,7 @@ contract Crowdfunding
         // validate campaignId
         require (campaignId < numCampaigns, "Invalid camapignId");
 
-        Campaign storage c = campaigns[campaingId];
+        Campaign storage c = campaigns[campaignId];
 
         if (c.state == State.Active)
         {
