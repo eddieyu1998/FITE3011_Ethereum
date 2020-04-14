@@ -51,7 +51,9 @@ contract Crowdfunding
     }
 
     uint numCampaigns;  // total number of campaigns
-    mapping (uint => Campaign) campaigns;
+    Campaign[] campaigns;
+
+    event CampaignCreated (uint campaignId, address owner);
 
     // Getter for goal of a campaign
     function getGoal (uint campaignId) public view returns (uint)
@@ -75,7 +77,7 @@ contract Crowdfunding
     }
 
     // Function to create a campaign
-    function createCampaign (uint endTime, uint goal) public returns (uint campaignId)
+    function createCampaign (uint endTime, uint goal) public
     {
         // validate endTime
         require (endTime > block.timestamp, "Invalid endTime");
@@ -83,8 +85,9 @@ contract Crowdfunding
         // validate goal
         require (goal > 0, "Invalid goal");
 
-        campaignId = numCampaigns++;
-        campaigns[campaignId] = Campaign(msg.sender, endTime, goal, 0, 0, State.Active);
+        uint campaignId = numCampaigns++;
+        numCampaigns = campaigns.push(Campaign(msg.sender, endTime, goal, 0, 0, State.Active));
+        emit CampaignCreated(campaignId, msg.sender);
     }
 
     // Function to check (and update) campaign state (from Active)
