@@ -79,6 +79,13 @@ contract Crowdfunding
         return campaigns[campaignId].deposit;
     }
 
+    // Getter for current campaign state
+    function getCampaignState (uint campaignId) public view returns (State)
+    {
+        require (campaignId < numCampaigns, "Invalid camapignId");
+        return campaigns[campaignId].state;
+    }
+
     // Function to create a campaign
     function createCampaign (uint endTime, uint goal) public
     {
@@ -95,7 +102,7 @@ contract Crowdfunding
     }
 
     // Function to check (and update) campaign state (from Active)
-    function checkCampaignState (uint campaignId) public returns (State)
+    function checkCampaignState (uint campaignId) public return (State)
     {
         // validate campaignId
         require (campaignId < numCampaigns, "Invalid camapignId");
@@ -122,6 +129,11 @@ contract Crowdfunding
         // validate campaignId
         require (campaignId < numCampaigns, "Invalid campaignId");
 
+        State state = checkCampaignState(campaignId);
+
+        // endTime not reached + goal not reached => state == Active
+        require (state == State.Active, "The campaign is currently not accepting donation");
+
         Campaign storage c = campaigns[campaignId];
 
         // owner cannot donate to his own campaign
@@ -132,9 +144,6 @@ contract Crowdfunding
 
         // require transferring amount > 0
         require (msg.value > 0, "Invalid donation amount");
-
-        // possibly redundant? endTime not reached + goal not reached => Active
-        require (c.state == State.Active, "The campaign is currently not accepting donation");
 
         // allow donation
         c.donors[msg.sender] = msg.value;
@@ -153,8 +162,8 @@ contract Crowdfunding
         // validate campaignId
         require (campaignId < numCampaigns, "Invalid campaignId");
 
-        Campaign storage c = campaigns[campaignId];
         State state = checkCampaignState(campaignId);
+        Campaign storage c = campaigns[campaignId];
 
         if (msg.sender == c.owner)
         {

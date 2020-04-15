@@ -58,6 +58,9 @@ contract("Crowdfunding test", async accounts => {
         let result = await crowdfunding.createCampaign(endTime0, goal0, {from: owner1});
         logTx(result);
 
+        const s = getState(0);
+        console.log(s);
+
         let log = result.logs[0];
         assert.equal(log.args.campaignId, 0);
     });
@@ -206,4 +209,12 @@ const logTx = tx => {
     console.log('---------------');
     console.log(tx);
     console.log('---------------');
+}
+
+const getState = (campaignId) => {
+    result = {};
+    let state = await crowdfunding.getState(campaignId);
+    console.log(state)
+    result.state = state;
+    return result;
 }
