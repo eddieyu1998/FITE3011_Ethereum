@@ -22,6 +22,8 @@ pragma solidity ^0.5.16;
 *       - completed: owner has drawn from the campaign
 *   2. endTime issue, last minute draw, time back donate: include a settledown period (+900s), after that can action be perform
 *
+*   3. Expired state not working! Any exception triggering function call will not modify the state (i.e. update the state)
+*       - Require timestamp check every time a function is called, instead of checking state
 *
 *   Security:
 *   1. variable private modifier needed?
@@ -102,7 +104,7 @@ contract Crowdfunding
     }
 
     // Function to check (and update) campaign state (from Active)
-    function checkCampaignState (uint campaignId) public return (State)
+    function checkCampaignState (uint campaignId) public returns (State)
     {
         // validate campaignId
         require (campaignId < numCampaigns, "Invalid camapignId");
