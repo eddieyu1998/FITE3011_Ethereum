@@ -84,8 +84,23 @@ contract Crowdfunding
     // Getter for current campaign state
     function getCampaignState (uint campaignId) public view returns (State)
     {
+        // validate campaignId
         require (campaignId < numCampaigns, "Invalid camapignId");
-        return campaigns[campaignId].state;
+
+        Campaign storage c = campaigns[campaignId];
+
+        if (c.state == State.Active)
+        {
+            if (c.deposit >= c.goal)
+            {
+                return State.Achieved;
+            }
+            else if (block.timestamp > c.endTime)
+            {
+                return State.Expired;
+            }
+        }
+        return c.state;
     }
 
     // Function to create a campaign
@@ -131,7 +146,7 @@ contract Crowdfunding
         // validate campaignId
         require (campaignId < numCampaigns, "Invalid campaignId");
 
-        State state = checkCampaignState(campaignId);
+        State state = getCampaignState(campaignId);
 
         // endTime not reached + goal not reached => state == Active
         require (state == State.Active, "The campaign is currently not accepting donation");
@@ -153,7 +168,10 @@ contract Crowdfunding
         c.deposit += msg.value;
 
         // check whether the goal is reached
-        checkCampaignState(campaignId);
+        if (c.deposit >= c.goal)
+        {
+            c.state = State.Achieved;
+        }
 
         emit DonationReceived(campaignId, msg.sender, msg.value, c.deposit);
     }
