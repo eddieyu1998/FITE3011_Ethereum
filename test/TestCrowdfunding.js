@@ -227,11 +227,11 @@ contract("Crowdfunding test", async accounts => {
 
     // campaign 0 test finished
 
-    it (`should create campaign [1] by [owner2] with goal of [${goal1}] wei and endTime [+2s]`, async () => {
+    it (`should create campaign [1] by [owner2] with goal of [${goal1}] wei and endTime [+1s]`, async () => {
         const now = new Date();
         const secondsSinceUnixEpoch = Math.round(now.getTime()/1000);
 
-        endTime1 = secondsSinceUnixEpoch + 2;
+        endTime1 = secondsSinceUnixEpoch + 1;
 
         let result = await crowdfunding.createCampaign(endTime1, goal1, {from: owner2});
         logTx(result);
@@ -254,7 +254,7 @@ contract("Crowdfunding test", async accounts => {
         assert.equal(result, goal1);
     });
 
-    it (`should return [now+2s] as endTime of campaign [1]`, async () => {
+    it (`should return [now+1s] as endTime of campaign [1]`, async () => {
         let result = await crowdfunding.getEndTime.call(1);
         logTx(result);
 
