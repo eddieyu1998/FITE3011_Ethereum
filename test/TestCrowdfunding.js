@@ -231,7 +231,7 @@ contract("Crowdfunding test", async accounts => {
         const now = new Date();
         const secondsSinceUnixEpoch = Math.round(now.getTime()/1000);
 
-        endTime1 = secondsSinceUnixEpoch;
+        endTime1 = secondsSinceUnixEpoch + 2;
 
         let result = await crowdfunding.createCampaign(endTime1, goal1, {from: owner2});
         logTx(result);
@@ -283,8 +283,8 @@ contract("Crowdfunding test", async accounts => {
         assert.equal(result, donor1Donation2);
     });
 
-    it (`should return [Active] as state of campaign [1]`, async () => {
-        await new Promise(resolve => setTimeout(resolve, 8000));
+    it (`should return [Expired] as state of campaign [1]`, async () => {
+        await new Promise(resolve => setTimeout(resolve, 2000));
         let result = await crowdfunding.getCampaignState.call(1);
         logTx(result);
 
@@ -319,12 +319,20 @@ contract("Crowdfunding test", async accounts => {
         }
     });
 
-    it (`should return [Expired] as state of campaign [1]`, async () => {
-        let result = await crowdfunding.getCampaignState.call(1);
+    it (`should return [${donor1Donation2}] as [donor1] withdraw from campgaign [1]`, async () => {
+        let result = await crowdfunding.withdraw(1, {from: donor1});
         logTx(result);
 
-        assert.equal(result, state.Expired);
-    })
+        let log = result.logs[0];
+        assert.equal(log.args.amount, donor1Donation2);
+    });
+
+    it (`should return [0] as deposit of campaign [1]`, async () => {
+        let result = await crowdfunding.getDeposit.call(1);
+        logTx(result);
+
+        assert.equal(result, 0);
+    });
 
     /*
     it (``, async () => {
