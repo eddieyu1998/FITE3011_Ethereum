@@ -2,19 +2,16 @@ const AddressList = artifacts.require("Addresslist");
 
 const DEBUG = false;
 
-const BN = web3.utils.BN;
-
-var chai = require
 
 /** test case:
  * 
- * address1 create list [0]
- * address2 create list [1]
- * address1 add address2 to list[0]
- * 
- * 
- * 
- * 
+ * address0 create list [0]
+ * address1 create list [1]
+ * address0 add address1,2,3 to list[0]
+ * address0 get address1,2,3 from name
+ * address0 update address: 1<->3
+ * address0 get address1,2,3 from name
+ * address0 send to address1,2,3
  * 
  * 
  * 
@@ -59,6 +56,112 @@ contract("Addresslist test", async accounts => {
         assert.equal(log.args.name, "Address1");
         assert.equal(log.args.clientAddress, address1);
     });
+
+    it (`should add [address2] to list [0] by [address0]`, async () => {
+        let result = await addressList.addAddress(0, "Address2", address2, {from:address0});
+        logTx(result);
+
+        let log = result.logs[0];
+        assert.equal(log.args.addressListId.valueOf(), 0);
+        assert.equal(log.args.name, "Address2");
+        assert.equal(log.args.clientAddress, address2);
+    });
+
+    it (`should add [address3] to list [0] by [address0]`, async () => {
+        let result = await addressList.addAddress(0, "Address3", address3, {from:address0});
+        logTx(result);
+
+        let log = result.logs[0];
+        assert.equal(log.args.addressListId.valueOf(), 0);
+        assert.equal(log.args.name, "Address3");
+        assert.equal(log.args.clientAddress, address3);
+    });
+
+    it (`should add [address3] to list [0] by [address0]`, async () => {
+        let result = await addressList.addAddress(0, "Address3", address3, {from:address0});
+        logTx(result);
+
+        let log = result.logs[0];
+        assert.equal(log.args.addressListId.valueOf(), 0);
+        assert.equal(log.args.name, "Address3");
+        assert.equal(log.args.clientAddress, address3);
+    });
+
+    it (`should return address1`, async () => {
+        let result = await addressList.getAddress.call(0, "Address1", {from:address0});
+        logTx(result);
+        
+        assert.equal(result, address1);
+    });
+
+    it (`should return address2`, async () => {
+        let result = await addressList.getAddress.call(0, "Address2", {from:address0});
+        logTx(result);
+        
+        assert.equal(result, address2);
+    });
+
+    it (`should return address3`, async () => {
+        let result = await addressList.getAddress.call(0, "Address3", {from:address0});
+        logTx(result);
+        
+        assert.equal(result, address3);
+    });
+
+    it (`should update address1 as address3`, async () => {
+        let result = await addressList.updateAddress(0, "Address1", address3, {from:address0});
+        logTx(result);
+        
+        let log = result.logs[0];
+        assert.equal(log.args.addressListId.valueOf(), 0);
+        assert.equal(log.args.name, "Address1");
+        assert.equal(log.args.oldAddress, address1);
+        assert.equal(log.args.newAddress, address3);
+    });
+
+    it (`should update address3 as address1`, async () => {
+        let result = await addressList.updateAddress(0, "Address3", address1, {from:address0});
+        logTx(result);
+        
+        let log = result.logs[0];
+        assert.equal(log.args.addressListId.valueOf(), 0);
+        assert.equal(log.args.name, "Address3");
+        assert.equal(log.args.oldAddress, address3);
+        assert.equal(log.args.newAddress, address1);
+    });
+
+    it (`should return address3`, async () => {
+        let result = await addressList.getAddress.call(0, "Address1", {from:address0});
+        logTx(result);
+        
+        assert.equal(result, address3);
+    });
+
+    it (`should return address2`, async () => {
+        let result = await addressList.getAddress.call(0, "Address2", {from:address0});
+        logTx(result);
+        
+        assert.equal(result, address2);
+    });
+
+    it (`should return address1`, async () => {
+        let result = await addressList.getAddress.call(0, "Address3", {from:address0});
+        logTx(result);
+        
+        assert.equal(result, address1);
+    });
+
+    it (`should send [10] to address3 from address0`, async () => {
+        let result = await addressList.sendToClient(0, "Address1", 10, {from: address0, value: 10});
+        logTx(result);
+        
+        let log = result.logs[0];
+        assert.equal(log.args.addressListId.valueOf(), 0);
+        assert.equal(log.args.name, "Address1");
+        assert.equal(log.args.clientAddress, address3);
+        assert.equal(log.args.amount, address1);
+    });
+
 
     /*
     it (``, async () => {
