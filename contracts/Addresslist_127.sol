@@ -10,7 +10,7 @@ pragma solidity ^0.5.16;
 *
 */
 
-contract AddressList
+contract Addresslist
 {
     struct AddressList
     {
@@ -27,7 +27,7 @@ contract AddressList
     event AmountSentToClient (uint addressListId, string name, address clientAddress, uint amount);
 
     // Function to create address list
-    function createAddressList ()
+    function createAddressList () public
     {
         uint addressListId = numAddressList++;
         numAddressList = addressList.push(AddressList(msg.sender, 0));
@@ -36,10 +36,10 @@ contract AddressList
     }
 
     // Function to add address to list
-    function addAddress (uint addressListId, string name, address clientAddress) public
+    function addAddress (uint addressListId, string memory name, address clientAddress) public
     {
         require (addressListId < numAddressList, "Invalid addressListId");
-        
+
         require (msg.sender == addressList[addressListId].owner, "Only owner can modify the list");
 
         addressList[addressListId].clients[name] = clientAddress;
@@ -48,17 +48,17 @@ contract AddressList
     }
 
     // Function to search address by name
-    function getAddress (uint addressListId, string name) public view returns (address)
+    function getAddress (uint addressListId, string memory name) public view returns (address)
     {
         require (addressListId < numAddressList, "Invalid addressListId");
-        
+
         // require owner identity?
 
         return addressList[addressListId].clients[name];
     }
 
     // same as addAddress, just added existance checking
-    function updateAddress (uint addressListId, string name, address newAddress) public
+    function updateAddress (uint addressListId, string memory name, address newAddress) public
     {
         require (addressListId < numAddressList, "Invalid addressListId");
         
@@ -72,13 +72,14 @@ contract AddressList
         emit AddressUpdated(addressListId, name, oldAddress, newAddress);
     }
 
-    function sendToClient (uint addressListId, string name, uint amount) public payable
+    function sendToClient (uint addressListId, string memory name, uint amount) public payable
     {
         require (addressListId < numAddressList, "Invalid addressListId");
 
         require (msg.sender == addressList[addressListId].owner, "Only owner can use the list");
 
-        require (msg.value /*+ addressList[addressListId].balance*/ >= amount, "Balance not enough");
+        // add list balance to it
+        require (msg.value >= amount, "Balance not enough");
 
         require (addressList[addressListId].clients[name] > 0, "Client does not exist");
 
