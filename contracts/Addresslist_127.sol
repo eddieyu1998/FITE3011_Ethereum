@@ -25,6 +25,7 @@ contract Addresslist
     event AddressAdded (uint addressListId, string name, address payable clientAddress);
     event AddressUpdated (uint addressListId, string name, address payable oldAddress, address payable newAddress);
     event AmountSentToClient (uint addressListId, string name, address payable clientAddress, uint amount);
+    event BalanceIncreased (uint addressListId, uint newBalance);
 
     // Function to create address list
     function createAddressList () public
@@ -78,10 +79,9 @@ contract Addresslist
 
         require (msg.sender == addressList[addressListId].owner, "Only owner can use the list");
 
-        // add list balance to it
-        require (msg.value >= amount, "Balance not enough");
-
         require (addressList[addressListId].clients[name] != address(0x0), "Client does not exist");
+
+        require (msg.value + addressList[addressListId].balance >= amount, "Balance not enough");
 
         address payable clientAddress = addressList[addressListId].clients[name];
         clientAddress.transfer(amount);
@@ -95,10 +95,10 @@ contract Addresslist
 
         require (msg.sender == addressList[addressListId].owner, "Only owner can use the list");
 
-        require (msg.value > 0, "Invalid donation amount");
+        require (msg.value > 0, "Invalid amount");
 
         addressList[addressListId].balance += msg.value;
 
-        // emit BalanceIncreased(addressListId, msg.value);
+        emit BalanceIncreased(addressListId, addressList[addressListId].balance);
     }
 }
