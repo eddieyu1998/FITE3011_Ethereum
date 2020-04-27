@@ -1,4 +1,4 @@
-var AddressList = artifacts.require("AddressList");
+var AddressList = artifacts.require("Addresslist");
 
 module.exports = function(deployer)
 {
