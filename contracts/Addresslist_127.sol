@@ -12,43 +12,91 @@ pragma solidity ^0.5.16;
 
 contract Addresslist
 {
-    address owner;
-    mapping (string => address) clients;
+    struct AddressList
+    {
+        address owner;
+        uint balance;
+        mapping (string => address) clients;
+    }
+    uint numAddressList;
+    AddressList[] addressList;
+
+    event AddressListCreated (uint addressListId, address owner);
+    event AddressAdded (uint addressListId, string name, address clientAddress);
+    event AddressUpdated (uint addressListId, string name, address oldAddress, address newAddress);
+    event AmountSentToClient (uint addressListId, string name, address clientAddress, uint amount);
+
+    // Function to create address list
+    function createAddressList ()
+    {
+        uint addressListId = numAddressList++;
+        numAddressList = addressList.push(AddressList(msg.sender, 0));
+
+        emit AddressListCreated(addressListId, msg.sender);
+    }
 
     // Function to add address to list
-    function addAddress (string name, address clientAddress) public
+    function addAddress (uint addressListId, string name, address clientAddress) public
     {
-        // only owner can modify the list
-        require (msg.sender == owner, "Only owner can modify the list");
+        require (addressListId < numAddressList, "Invalid addressListId");
+        
+        require (msg.sender == addressList[addressListId].owner, "Only owner can modify the list");
 
-        clients[name] = clientAddress;
+        addressList[addressListId].clients[name] = clientAddress;
+
+        emit AddressAdded(addressListId, name, clientAddress);
     }
 
     // Function to search address by name
-    function getAddress (string name) public view returns (address)
+    function getAddress (uint addressListId, string name) public view returns (address)
     {
-        address clientAddress = clients[name];
-        return clientAddress;
-    }
-
-    // same as addAddress, just a more intuitive name
-    function updateAddress (string name, address clientAddress) public
-    {
-        // only owner can modify the list
-        require (msg.sender == owner, "Only owner can modify the list");
-
-        clients[name] = clientAddress;
-    }
-
-    function sendToClient (address sender, string name, uint amount) public payable
-    {
-        // sender's balance should be larger than transfer amount
-        require (msg.sender.balance >= amount, "You don't have enough balance");
-    
-        // check name exists in list
-        address clientAddress = clients[name];
-        require (clientAddress > 0, "Address does not exist");
-
+        require (addressListId < numAddressList, "Invalid addressListId");
         
+        // require owner identity?
+
+        return addressList[addressListId].clients[name];
+    }
+
+    // same as addAddress, just added existance checking
+    function updateAddress (uint addressListId, string name, address newAddress) public
+    {
+        require (addressListId < numAddressList, "Invalid addressListId");
+        
+        require (msg.sender == addressList[addressListId].owner, "Only owner can modify the list");
+
+        require (addressList[addressListId].clients[name] > 0, "Client does not exist");
+
+        address oldAddress = addressList[addressListId].clients[name];
+        addressList[addressListId].clients[name] = newAddress;
+
+        emit AddressUpdated(addressListId, name, oldAddress, newAddress);
+    }
+
+    function sendToClient (uint addressListId, string name, uint amount) public payable
+    {
+        require (addressListId < numAddressList, "Invalid addressListId");
+
+        require (msg.sender == addressList[addressListId].owner, "Only owner can use the list");
+        
+        require (msg.value /*+ addressList[addressListId].balance*/ >= amount, "Balance not enough");
+
+        require (addressList[addressListId].clients[name] > 0, "Client does not exist");
+
+        addressList[addressListId].clients[name].transfer(amount);
+
+        emit AmountSentToClient(addressListId, name, addressList[addressListId].clients[name], amount)
+    }
+
+    function addBalance (uint addressListId) public payable
+    {
+        require (addressListId < numAddressList, "Invalid addressListId");
+
+        require (msg.sender == addressList[addressListId].owner, "Only owner can use the list");
+
+        require (msg.value > 0, "Invalid donation amount");
+
+        addressList[addressListId].balance += msg.value;
+
+        // emit BalanceIncreased(addressListId, msg.value);
     }
 }
