@@ -10,7 +10,7 @@ pragma solidity ^0.5.16;
 *
 */
 
-contract Addresslist
+contract AddressList
 {
     struct AddressList
     {
@@ -77,14 +77,14 @@ contract Addresslist
         require (addressListId < numAddressList, "Invalid addressListId");
 
         require (msg.sender == addressList[addressListId].owner, "Only owner can use the list");
-        
+
         require (msg.value /*+ addressList[addressListId].balance*/ >= amount, "Balance not enough");
 
         require (addressList[addressListId].clients[name] > 0, "Client does not exist");
 
         addressList[addressListId].clients[name].transfer(amount);
 
-        emit AmountSentToClient(addressListId, name, addressList[addressListId].clients[name], amount)
+        emit AmountSentToClient(addressListId, name, addressList[addressListId].clients[name], amount);
     }
 
     function addBalance (uint addressListId) public payable
