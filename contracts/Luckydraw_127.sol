@@ -18,8 +18,8 @@ contract Luckydraw
         uint numRevealed;
         State state;
         mapping (address => bytes32) randomNumberHashs;
-        address[20] payable candidates;
-        uint[20] secretNumbers;
+        address payable[] candidates;
+        uint[] secretNumbers;
     }
     uint numLuckyDraw;
     LuckyDraw[] luckyDraws;
@@ -39,7 +39,9 @@ contract Luckydraw
     {
         require(msg.value == 10 ether, "10 ether is required for prize");
         uint luckyDrawId = numLuckyDraw++;
-        numLuckyDraw = luckyDraws.push(LuckyDraw(msg.sender, 0.01 ether, 20, 0, 0, State.Open));
+        address payable[] memory candidates = new address payable[](20);
+        uint[] memory secretNumbers = new uint[](20);
+        numLuckyDraw = luckyDraws.push(LuckyDraw(msg.sender, 0.01 ether, 20, 0, 0, State.Open, candidates, secretNumbers));
 
         emit LuckyDrawCreated (luckyDrawId, msg.sender);
     }
@@ -50,7 +52,7 @@ contract Luckydraw
 
         require (luckyDraws[luckyDrawId].numParticipants < 20, "The lucky draw is full");
 
-        require (msg.value == entryFee, "Entry fee of 0.01 is required");
+        require (msg.value == luckyDraws[luckyDrawId].entryFee, "Entry fee of 0.01 is required");
 
         luckyDraws[luckyDrawId].randomNumberHashs[msg.sender] = randomNumberHash;
 
@@ -70,11 +72,11 @@ contract Luckydraw
 
         require (luckyDraws[luckyDrawId].numRevealed < 20, "Cannot submit secret number at this stage");
 
-        require (keccak256(msg.sender, secret) == luckyDraws[luckyDrawId].randomNumberHashs[msg.sender], "Your secret number does not match");
+        require (keccak256(abi.encodePacked(msg.sender, secret)) == luckyDraws[luckyDrawId].randomNumberHashs[msg.sender], "Your secret number does not match");
 
-        luckyDraws[luckyDrawId].secretNumbers[numRevealed] = secret;
+        luckyDraws[luckyDrawId].secretNumbers[luckyDraws[luckyDrawId].numRevealed] = secret;
 
-        luckyDraws[luckyDrawId].candidates[numRevealed] = msg.sender;
+        luckyDraws[luckyDrawId].candidates[luckyDraws[luckyDrawId].numRevealed] = msg.sender;
 
         luckyDraws[luckyDrawId].numRevealed++;
 
@@ -100,5 +102,7 @@ contract Luckydraw
         }
 
         address payable winner = luckyDraws[luckyDrawId].candidates[(randomNumber % 20)];
+
+        return winner;
     }
 }
