@@ -18,7 +18,7 @@ contract Luckydraw
         uint numRevealed;
         State state;
         mapping (address => bytes32) randomNumberHashs;
-        address[20] payable participants;
+        address[20] payable candidates;
         uint[20] secretNumbers;
     }
     uint numLuckyDraw;
@@ -52,8 +52,6 @@ contract Luckydraw
 
         require (msg.value == entryFee, "Entry fee of 0.01 is required");
 
-        luckyDraws[luckyDrawId].participants[numParticipants] = msg.sender;
-
         luckyDraws[luckyDrawId].randomNumberHashs[msg.sender] = randomNumberHash;
 
         luckyDraws[luckyDrawId].numParticipants++;
@@ -75,6 +73,8 @@ contract Luckydraw
         require (keccak256(msg.sender, secret) == luckyDraws[luckyDrawId].randomNumberHashs[msg.sender], "Your secret number does not match");
 
         luckyDraws[luckyDrawId].secretNumbers[numRevealed] = secret;
+
+        luckyDraws[luckyDrawId].candidates[numRevealed] = msg.sender;
 
         luckyDraws[luckyDrawId].numRevealed++;
 
@@ -99,6 +99,6 @@ contract Luckydraw
             randomNumber ^= luckyDraws[luckyDrawId].secretNumbers[i];
         }
 
-        address payable winner = luckyDraws[luckyDrawId].participants[(randomNumber % 20)];
+        address payable winner = luckyDraws[luckyDrawId].candidates[(randomNumber % 20)];
     }
 }
