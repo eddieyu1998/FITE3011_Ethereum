@@ -1,30 +1,104 @@
 pragma solidity ^0.5.16;
 
+    // until the draw, everything is public. The last person enrolling has big advantage
+    // the possible variants to introduce randomness are:
+    // block info (now miner has the advantage, but majority of miners should be honest, not too many attempts can be performed before others broadcase a valid block)
+    // user based variants e.g.address, user-picked random number (again, all publicly seen by the later participants)
+    // variable not known at time of draw e.g.future blocks (too complicated to implement)
+
+    // block.difficulty, block.timestamp
 contract Luckydraw
 {
-    uint entryFee = 10000000000000000;  // 0.01 ether
-    uint limit = 20;    // max 20 participants
-    uint numParticipants;
-    address[20] participants;
-
-    function participate () public payable
+    struct LuckyDraw
     {
-        require (numParticipants < 20, "The lucky draw is full");
+        address organizer;
+        uint entryFee;  // 0.01 ether
+        uint limit;    // max 20 participants
+        uint numParticipants;
+        uint numRevealed;
+        State state;
+        mapping (address => bytes32) randomNumberHashs;
+        address[20] payable participants;
+        uint[20] secretNumbers;
+    }
+    uint numLuckyDraw;
+    LuckyDraw[] luckyDraws;
+
+    enum State
+    {
+        Open,
+        Revealing,
+        Completed
+    }
+
+    event LuckyDrawCreated (uint luckyDrawId, address organizer);
+    event EnterRevealingStage (uint luckyDrawId);
+    event LuckyDrawCompleted (uint luckyDrawId, address payable winner);
+
+    function createLuckyDraw () public payable
+    {
+        require(msg.value == 10 ether, "10 ether is required for prize");
+        uint luckyDrawId = numLuckyDraw++;
+        numLuckyDraw = luckyDraws.push(LuckyDraw(msg.sender, 0.01 ether, 20, 0, 0, State.Open));
+
+        emit LuckyDrawCreated (luckyDrawId, msg.sender);
+    }
+
+    function participate (uint luckyDrawId, bytes32 randomNumberHash) public payable
+    {
+        require (luckyDraws[luckyDrawId].state == State.Open, "The luckydraw is not open for participation");
+
+        require (luckyDraws[luckyDrawId].numParticipants < 20, "The lucky draw is full");
 
         require (msg.value == entryFee, "Entry fee of 0.01 is required");
 
-        participants[numParticipants] = msg.sender;
+        luckyDraws[luckyDrawId].participants[numParticipants] = msg.sender;
 
-        numParticipants++;
+        luckyDraws[luckyDrawId].randomNumberHashs[msg.sender] = randomNumberHash;
 
-        if (numParticipants == 20)
+        luckyDraws[luckyDrawId].numParticipants++;
+
+        if (luckyDraws[luckyDrawId].numParticipants == 20)
         {
-            // start lucky draw
+            luckyDraws[luckyDrawId].state = State.Revealing;
+
+            emit EnterRevealingStage (luckyDrawId);
         }
     }
 
-    function startLuckyDraw () private
+    function submitSecretNumber (uint luckyDrawId, uint secret) public
     {
-        
+        require (luckyDraws[luckyDrawId].state == State.Revealing, "Cannot submit secret number at this stage");
+
+        require (luckyDraws[luckyDrawId].numRevealed < 20, "Cannot submit secret number at this stage");
+
+        require (keccak256(msg.sender, secret) == luckyDraws[luckyDrawId].randomNumberHashs[msg.sender], "Your secret number does not match");
+
+        luckyDraws[luckyDrawId].secretNumbers[numRevealed] = secret;
+
+        luckyDraws[luckyDrawId].numRevealed++;
+
+        if (luckyDraws[luckyDrawId].numRevealed == 20)
+        {
+            address payable winner = determineWinner(luckyDrawId);
+
+            winner.transfer(10 ether);
+
+            luckyDraws[luckyDrawId].state = State.Completed;
+
+            emit LuckyDrawCompleted (luckyDrawId, winner);
+        }
+    }
+
+    function determineWinner (uint luckyDrawId) private returns (address payable)
+    {
+        uint randomNumber = luckyDraws[luckyDrawId].secretNumbers[0];
+
+        for (uint i = 1; i < luckyDraws[luckyDrawId].numRevealed; i++)
+        {
+            randomNumber ^= luckyDraws[luckyDrawId].secretNumbers[i];
+        }
+
+        address payable winner = luckyDraws[luckyDrawId].participants[(randomNumber % 20)];
     }
 }
